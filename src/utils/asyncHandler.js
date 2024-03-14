@@ -1,5 +1,10 @@
  // This is erapper functions which is basically can be used to handle We can either use try catch or promises.
 
+ //Higher order functions are those who take functions as parameter or can return functions.
+//  const asyncHandler = () =>{}
+// const asyncHandler = (func) => () =>{}
+// const asyncHandler = (func) => async()=>{}
+
  //Wrapper function using promises->
 
 
@@ -14,11 +19,6 @@ export { asyncHandler }
 
 
 //Wrapper function using try catch->
-
-//Higher order functions are those who take functions as parameter or can return functions.
-//  const asyncHandler = () =>{}
-// const asyncHandler = (func) => () =>{}
-// const asyncHandler = (func) => async()=>{}
 
 // const asyncHandler=(fn)=> async(req,res,next)=>{
 //     try {

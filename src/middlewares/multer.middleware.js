@@ -2,7 +2,9 @@ import multer from "multer";
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        //in the temporarry folder the file will get stored 
+      //multer stores the file in the temporarry folder and gives the original name
+      //which user have set
+      //in the temporarry folder the file will get stored 
       cb(null, "./public/temp")
     },
     filename: function (req, file, cb) {
