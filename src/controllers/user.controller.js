@@ -23,7 +23,7 @@ const registerUser=asyncHandler(async (req,res)=>{
     //can use find also, no difference.
     //$or is a special type of syntax that cheks if any one of the parameters is same
     //then it stores the valuse
-    const existedUser= User.findOne({
+    const existedUser= await User.findOne({
         $or: [{username},{email}]
     })
 
@@ -39,7 +39,19 @@ const registerUser=asyncHandler(async (req,res)=>{
     // avatar[0] is a path of the file in the local folder
     //we may and may not get files (avatar,coverimage and their path) thats why using "?" .
     const avatarLocalPath = req. files?.avatar[0]?.path
-    const coverImageLocalPath = req. files?.coverImage[0]?.path
+
+    //const coverImageLocalPath = req. files?.coverImage[0]?.path
+    //check if cover image is uploaded by the user or not only then proceed or else will face undifined error
+    let coverImageLocalPath;
+    //the case handles when user doesnot upload coverimage
+    if(req.files &&  Array.isArray(req.files.coverImage) && req.files.coverImage.length>0) {
+        coverImageLocalPath=req.files.coverImage[0].path
+    }
+    
+
+    
+
+    //console.log(req.files);
 
     //check if avatar path is there or not else throw error
 
@@ -50,6 +62,7 @@ const registerUser=asyncHandler(async (req,res)=>{
     // upload them to cloudinary, avatar
     const avatar= await uploadOnCloudinary(avatarLocalPath)
     const coverImage = await uploadOnCloudinary(coverImageLocalPath)
+    
 
     if(!avatar){
         throw new ApiError(400,"Avatar is required")
