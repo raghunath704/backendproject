@@ -4,12 +4,31 @@ import { User } from "../models/user.model.js";
 import {uploadOnCloudinary} from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
+//Function to generate and save access and refresh token
+const generateAccessAndRefereshTokens = async(userId) =>{
+    try {
+        const user = await User.findById(userId)
+        const accessToken = user.generateAccessToken()
+        const refreshToken = user.generateRefreshToken()
+        //set generated refreshtoken to database
+        user.refreshToken = refreshToken
+        //save the updated user
+        await user.save({ validateBeforeSave: false })
+
+        return {accessToken, refreshToken}
+
+
+    } catch (error) {
+        throw new ApiError(500, "Something went wrong while generating referesh and access token")
+    }
+}
+
 //registering user and sending json data
 const registerUser=asyncHandler(async (req,res)=>{
     // get user details from frontend
     //destructuring object from req.body
     const {fullName,email,username,password}=req.body
-    console.log(email);
+    //console.log(email);
 
     //validation - check if not empty
 
@@ -19,7 +38,7 @@ const registerUser=asyncHandler(async (req,res)=>{
     if(password==="") throw new ApiError(400, "Password is required") 
 
     // check if user already exists: username, email 
-    //findone checksa and return first document that have the following parameters
+    //findone checks and return first document that have the following parameters
     //can use find also, no difference.
     //$or is a special type of syntax that cheks if any one of the parameters is same
     //then it stores the valuse
@@ -100,4 +119,95 @@ const registerUser=asyncHandler(async (req,res)=>{
 
 })
 
-export {registerUser}
+const loginUser =asyncHandler(async (req,res)=>{
+    // req body -> data
+
+    const {email, username, password} = req.body
+
+    // username or email
+    if (!(username || email)) {
+        throw new ApiError(400,"Username or emaill is required.")
+
+    }
+    //now if you wnat the user to validate through only username or password, you can check only that parameter.
+
+    //find the user
+    const user = await User.findOne({
+        $or:[{username},{email}]
+    })
+
+    if(!user){
+        throw new ApiError(404,"User doent exist")
+    }
+    //password check
+    //User capital (U) is mongodb user object 
+    // user small (u) is local instance user object
+    const isPasswordValid = await user.isPasswordCorrect(password)
+
+
+    if(!isPasswordValid){
+        throw new ApiError(401,"Invalid user credentials")
+    }
+
+    //access and referesh token
+
+    const {accessToken, refreshToken} = await generateAccessAndRefereshTokens(user._id)
+
+
+    //send cookie
+    //make database call and get user without certain preoperties
+    const loggedInUser= await User.findById(user._id).select("-password -refreshToken")
+
+    //makes cashe only modifiable through server
+    const options = {
+        httponly: true, 
+        secure: true
+    }
+
+    //Return access and refresh token 
+
+    return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken",refreshToken,options)
+    .json( 
+        new ApiResponse(
+            200,
+            //we are sending the accesstoken and refresh token in json even after sending them in cookie is for if the backend is for mobile development, then cookie is not saved so if the tokens are sent by json responce then frontend developer can manually save them.
+            {
+                user: loggedInUser,accessToken,refreshToken
+            },
+            "User logged In Successfully"
+            
+        )
+    )
+})
+
+const logoutUser =asyncHandler(async(req,res)=>{
+    //user had a access token and we decoded the token and matched if it is vakid token or not in auth middlewere in the return it returns user with valid token. so we get access to the user by this technique
+
+    await User.findByIdAndUpdate(
+        req.user._id,
+        {   //removing refreshtoken
+            $unset: {
+                refreshToken: 1 // this removes the field from document
+            }
+        },
+        {   //this ensures the return document doesnot have old values,but the updated one.or else the refresh token will also come.
+            new: true
+        }
+    )
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+
+    return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, {}, "User logged Out"))
+
+})
+
+export {registerUser,loginUser,logoutUser}
