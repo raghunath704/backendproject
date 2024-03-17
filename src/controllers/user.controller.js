@@ -119,13 +119,13 @@ const registerUser=asyncHandler(async (req,res)=>{
 
 })
 
-const loginUser =asyncHandler(async (req,res)=>{
+const loginUser = asyncHandler(async (req,res)=>{
     // req body -> data
 
     const {email, username, password} = req.body
 
     // username or email
-    if (!(username || email)) {
+    if (!username & !email) {
         throw new ApiError(400,"Username or emaill is required.")
 
     }
@@ -210,4 +210,133 @@ const logoutUser =asyncHandler(async(req,res)=>{
 
 })
 
-export {registerUser,loginUser,logoutUser}
+const refreshAccessToken = asyncHandler(async (req, res) => {
+
+    //take refresh token from cookie or from body(mobile development)
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+
+    //if refresh token is not present then throw error
+    if (!incomingRefreshToken) {
+        throw new ApiError(401, "unauthorized request")
+    }
+    //refresh token present
+    try {
+        //jwt.varify decodes the present refresh token 
+        const decodedToken = jwt.verify(
+            incomingRefreshToken,
+            process.env.REFRESH_TOKEN_SECRET
+        )
+
+        //search user with that token in db
+        const user = await User.findById(decodedToken?._id)
+
+        //if that user doesnt exist then throw error
+        if (!user) {
+            throw new ApiError(401, "Invalid refresh token")
+        }
+        //throw error if the refresh token sent by user(incoming refreshtoken) and 
+        //the token saved in user object doesnot match
+        if (incomingRefreshToken !== user?.refreshToken) {
+            throw new ApiError(401, "Refresh token is expired or used")
+            
+        }
+        //refresh token matched, give access to the session
+        //options for sending cookie
+        const options = {
+            httpOnly: true,
+            secure: true
+        }
+        //get reference to new access and refresh token to send through cookie.
+        const {accessToken, newRefreshToken} = await generateAccessAndRefereshTokens(user._id)
+        
+        //send coockie and json responce
+        return res
+        .status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", newRefreshToken, options)
+        .json(
+            new ApiResponse(
+                200, 
+                {accessToken, refreshToken: newRefreshToken},
+                "Access token refreshed"
+            )
+        )
+    } catch (error) {
+        throw new ApiError(401, error?.message || "Invalid refresh token")
+    }
+
+})
+
+const changeCurrentPassword = asyncHandler(async(req, res) => {
+    //get old and new password from frontend 
+    const {oldPassword, newPassword} = req.body
+
+    
+    //find user based on old password
+    const user = await User.findById(req.user?._id)
+
+    //check if the old password is correct or not
+    //it return true or false
+    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
+
+    //throw error if the password is not correct
+    if (!isPasswordCorrect) {
+        throw new ApiError(400, "Invalid old password")
+    }
+    //ifthe old password is correct then assign new password to the user password
+    user.password = newPassword
+    //save that new password to db
+    await user.save({validateBeforeSave: false})
+    //return json response 
+    return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password changed successfully"))
+})
+
+const getCurrentUser = asyncHandler(async(req, res) => {
+    return res
+    .status(200)
+    .json(new ApiResponse(
+        200,
+        req.user, //we are getting req.user because we returned full user in auth middlewere
+        "User fetched successfully"
+    ))
+})
+
+const updateAccountDetails = asyncHandler(async(req, res) => {
+    //get required fields from request.body
+    const {fullName, email} = req.body
+
+    if (!fullName || !email) {
+        throw new ApiError(400, "All fields are required")
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {   //set is a mongodb opoeratier that sets value to parrameters
+            $set: {
+                fullName:fullName,
+                email: email
+            }
+        },
+        //this ensures we are gatiing updated/new value
+        {new: true}
+        
+    ).select("-password") //remove password field from user
+
+    return res
+    .status(200)
+    //send updated user details as  json
+    .json(new ApiResponse(200, user, "Account details updated successfully"))
+});
+
+
+
+export {registerUser,
+    loginUser,
+    logoutUser,
+    refreshAccessToken,
+    changeCurrentPassword,
+    getCurrentUser,
+    updateAccountDetails
+}
