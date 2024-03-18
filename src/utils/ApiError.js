@@ -10,6 +10,7 @@ class ApiError extends Error{
 
     ){
         //Override the constructor
+        //super keyword is used to get parent 
         super(message)
         this.statusCode=statusCode
         this.data=null

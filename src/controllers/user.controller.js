@@ -330,6 +330,72 @@ const updateAccountDetails = asyncHandler(async(req, res) => {
     .json(new ApiResponse(200, user, "Account details updated successfully"))
 });
 
+const updateUserAvatar =asyncHandler(async(req,res)=>{
+    //access local path of avatar
+    const avatarLocalPath=req.file?.path
+
+    //if the file not exist then throw error
+    if(!avatarLocalPath){
+        throw new ApiError(400,"Avatar file is missing")
+    }
+
+    //upload the file on cloudinary and returns path 
+    const avatar=await uploadOnCloudinary(avatarLocalPath)
+
+    //if avatar url is not found throw error
+    if(!avatar.url){
+        throw new ApiError(400,"Error while uploading avatar")
+    }
+
+    const user=User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set:{
+                avatar:avatar.url
+            }
+        },
+        {new:true}
+    ).select("-password")
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200,"Avatar updated successfully"))
+
+})
+
+const updateUserCoverImage =asyncHandler(async(req,res)=>{
+    //access local path of avatar
+    const coverImageLocalPath=req.file?.path
+
+    //if the file not exist then throw error
+    if(!coverImageLocalPath){
+        throw new ApiError(400,"Cover image file is missing")
+    }
+
+    //upload the file on cloudinary and returns path 
+    const coverImage=await uploadOnCloudinary(avatarLocalPath)
+
+    //if avatar url is not found throw error
+    if(!coverImage.url){
+        throw new ApiError(400,"Error while uploading Cover image")
+    }
+
+    const user=User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set:{
+                coverImage:avatar.url
+            }
+        },
+        {new:true}
+    ).select("-password")
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200,"Cover Image updated successfully"))
+
+})
+
 
 
 export {registerUser,
@@ -338,5 +404,7 @@ export {registerUser,
     refreshAccessToken,
     changeCurrentPassword,
     getCurrentUser,
-    updateAccountDetails
+    updateAccountDetails,
+    updateUserAvatar,
+    updateUserCoverImage
 }

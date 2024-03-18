@@ -1,5 +1,7 @@
 import multer from "multer";
 
+//this middlewere uploads files to the database
+
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
       //multer stores the file in the temporarry folder and gives the original name

@@ -4,7 +4,7 @@ import {upload} from '../middlewares/multer.middleware.js'
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router=Router()
-//this will add /register ppath and will register
+//this will add /register path and will register
 router.route("/register").post(
     
     //middlewere injection just before registering user
@@ -25,7 +25,7 @@ router.route("/register").post(
     registerUser
     
     
-    )
+)
 
 router.route("/login").post(loginUser)
 
