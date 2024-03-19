@@ -13,6 +13,8 @@ const generateAccessAndRefereshTokens = async(userId) =>{
         //set generated refreshtoken to database
         user.refreshToken = refreshToken
         //save the updated user
+
+        //validateBeforeSave: false => it means validation doesn't run on any changes you make in pre('save') hooks
         await user.save({ validateBeforeSave: false })
 
         return {accessToken, refreshToken}
@@ -38,7 +40,7 @@ const registerUser=asyncHandler(async (req,res)=>{
     if(password==="") throw new ApiError(400, "Password is required") 
 
     // check if user already exists: username, email 
-    //findone checks and return first document that have the following parameters
+    //The findOne() function is used to find one document according to the condition. If multiple documents match the condition, then it returns the first document satisfying the condition. 
     //can use find also, no difference.
     //$or is a special type of syntax that cheks if any one of the parameters is same
     //then it stores the valuse
