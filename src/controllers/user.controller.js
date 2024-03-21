@@ -56,7 +56,7 @@ const registerUser=asyncHandler(async (req,res)=>{
     // check for images, check for avatar
 
     
-    //as we wrote a middlewere in the userroute, it gives the req more fields like file
+    //as we wrote a middlewere in the userroute, it gives the req more fields like avatar and cover image file
     // avatar[0] is a path of the file in the local folder
     //we may and may not get files (avatar,coverimage and their path) thats why using "?" .
     const avatarLocalPath = req. files?.avatar[0]?.path
