@@ -95,6 +95,7 @@ const registerUser=asyncHandler(async (req,res)=>{
         fullName,
         avatar: avatar.url,
         //if the cover image exisists then use its url else use empty string
+        //as we take it as optional
         coverImage: coverImage?.url || "",
         email,
         password,
@@ -142,8 +143,7 @@ const loginUser = asyncHandler(async (req,res)=>{
         throw new ApiError(404,"User doent exist")
     }
     //password check
-    //User capital (U) is mongodb user object 
-    // user small (u) is local instance user object
+    
     const isPasswordValid = await user.isPasswordCorrect(password)
 
 
@@ -166,7 +166,7 @@ const loginUser = asyncHandler(async (req,res)=>{
         secure: true
     }
 
-    //Return access and refresh token 
+    //Return access and refresh token and api response
 
     return res
     .status(200)
@@ -236,13 +236,12 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         if (!user) {
             throw new ApiError(401, "Invalid refresh token")
         }
-        //throw error if the refresh token sent by user(incoming refreshtoken) and 
-        //the token saved in user object doesnot match
+        //!throw error if user exisits but the refresh token doesnt match
         if (incomingRefreshToken !== user?.refreshToken) {
             throw new ApiError(401, "Refresh token is expired or used")
             
         }
-        //refresh token matched, give access to the session
+        //*refresh token matched, give access to the session
         //options for sending cookie
         const options = {
             httpOnly: true,
@@ -329,7 +328,11 @@ const updateAccountDetails = asyncHandler(async(req, res) => {
     return res
     .status(200)
     //send updated user details as  json
-    .json(new ApiResponse(200, user, "Account details updated successfully"))
+    .json(new ApiResponse(
+        200, 
+        user, 
+        "Account details updated successfully"
+    ))
 });
 
 const updateUserAvatar =asyncHandler(async(req,res)=>{

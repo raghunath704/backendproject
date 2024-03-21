@@ -52,7 +52,7 @@ const userSchema = new Schema(
     }
 )
 
-//middlewere hook to do something(encrypt in this context) just before saving password
+//middlewere hook to do something(encrypt in this context) just before saving password in db
 userSchema.pre("save", async function (next) {
     //if the password is not modified then the network flow will go to the next.
     if(!this.isModified("password")) return next();
