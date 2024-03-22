@@ -401,6 +401,95 @@ const updateUserCoverImage =asyncHandler(async(req,res)=>{
 
 })
 
+const getUserChannelProfile = asyncHandler(async(req,res)=>{
+    const {username}=req.params
+
+    // if username doesnot exist throw error
+    if(username?.trim()){
+        throw new ApiError(400,"username is missing")
+    }
+    
+    //write aggregation pipeline
+
+    const channel= await User.aggregate([
+        {
+            $match:{
+                username:username?.toLowerCase()
+            }
+        },
+        {   //join operation to find users subscribbers
+            $lookup:{
+                from: "subscriptions",
+                $localField:"_id",
+                foreignField: "channel",
+                as:"subscribers"
+            }
+
+        },
+        {   //join operation to find channels user subscribed to 
+            $lookup:{
+                from: "subscriptions",
+                $localField:"_id",
+                foreignField: "subscriber",
+                as:"subscribedTo"
+            }
+
+        },
+        {   //it adds additional fields to document using current fields
+            //eg full name = firstname + lastname
+            $addFields:{
+                //count subbscribers
+                subscribersCount:{
+                    $size:"$subscribers"
+                },
+                //count channels usser have subscribed
+                channelsSubscribedToCount:{
+                    $size:"$subscribedTo"
+                },
+                //check if current user is subscribed to current channel
+                //for  implementing subscribe button turning to subscribed
+                isSubscribed:{
+                    $cond:{
+                        //check if current user is present in the channels subscribers
+                        if:{ $in: [ req.user?._id, "$subscribers.subscriber"]},
+                        then: true,
+                        else: false
+                    }
+                }
+
+            }
+
+        },
+        {   // only send selective values 
+            $project:{
+                fullName: 1,
+                username: 1,
+                subscribersCount: 1,
+                channelsSubscribedToCount: 1,
+                isSubscribed: 1, 
+                avatar: 1, 
+                coverImage: 1, 
+                email: 1
+
+
+            }
+        }
+    ])
+
+
+    if(!channel?.length){
+        throw new ApiError(400,"channel does not exist")
+    }
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, channel[0], "Your channel fetched successfully")
+    )
+     
+
+})
+
 
 
 export {registerUser,
