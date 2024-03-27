@@ -3,6 +3,7 @@ import {ApiError} from "../utils/ApiError.js"
 import { User } from "../models/user.model.js";
 import {uploadOnCloudinary} from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import mongoose from "mongoose";
 
 //Function to generate and save access and refresh token
 const generateAccessAndRefereshTokens = async(userId) =>{
@@ -490,7 +491,79 @@ const getUserChannelProfile = asyncHandler(async(req,res)=>{
 
 })
 
+const getWatchHistory=asyncHandler(async(req,res)=>{
+    //get access of user
+    const user=await User.aggregate([
+        {
+            $match:{
+                //converting 
+                _id: new mongoose.Types.ObjectId(req.user._id)
+            }
+        },
+        {   //lookup, to get access of user through _id
+            $lookup:{
+                from:"videos",
+                localField: "watchHistory",
+                foreignField:"_id",
+                as:"watchHistory",
 
+                //sub pipeline to access owner field of video
+                pipeline:[
+                    {
+                        $lookup:{
+                            from :"users",
+                            localField:"owner",
+                            foreignField:"_id",
+                            as: "owner",
+                            //as we are getting getting user as owner,
+                            //all the users property will be stored to watchhistory
+                            //we only need the name of the user.
+                            //so writting a pipeline to filter out all unnececery fields of user
+                            pipeline:[
+                                {
+                                    $project:{
+                                        fullName:1,
+                                        username:1,
+                                        avatar:1
+
+                                    }
+
+                                }
+                                
+                            ]
+                        }
+                    },
+                    //frontend dev will get owner array and in the 1st element all
+                    //the projection data will be there, but we want to send direct those 
+                    //datas instead of doing arr[0].
+                    {
+                        $addFields:{
+                            //overriding owner field to avoid doing arr[0] 
+                            //getting first value(the properties of owner) 
+                            //and assigning it on owner (override)
+                            owner:{
+                                $first:"$owner"
+                            }
+                        }
+                    }
+                ]
+            }
+
+        }
+    ])
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(
+            200,
+            user[0].watchHistory,
+            "Watch history fetched Sucessfully"
+        )
+    )
+
+    
+})
 
 export {registerUser,
     loginUser,
@@ -500,5 +573,7 @@ export {registerUser,
     getCurrentUser,
     updateAccountDetails,
     updateUserAvatar,
-    updateUserCoverImage
+    updateUserCoverImage,
+    getUserChannelProfile,
+    getWatchHistory
 }
