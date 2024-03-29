@@ -20,7 +20,7 @@ class ApiError extends Error{
 
 
         //To trace the error in the error stack
-        //Not vital as of now
+        //Stack trace: A list of function calls that led to the error, helpful for debugging.
         if (stack) {
             this.stack = stack
         } else{

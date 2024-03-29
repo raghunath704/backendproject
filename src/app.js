@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser"
 const app = express()
 
 //for configuration we use app.use().
+//applying cors middlewere to allow different url frontends to call the backend
 app.use(cors({
     origin:process.env.CORS_ORIGIN,
     credentials:true
@@ -26,6 +27,7 @@ import userRouter from './routes/user.routes.js'
 
 //routes declearation
 //this will pass the request to userRouter route
+//no need to write routes hare.
 app.use("/api/v1/users",userRouter)
 
 export default app
