@@ -1,8 +1,9 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {ApiError} from "../utils/ApiError.js"
-import { User } from "../models/user.model.js";
-import {uploadOnCloudinary} from "../utils/cloudinary.js";
+import { User} from "../models/user.model.js"
+import {uploadOnCloudinary} from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js";
+import jwt from "jsonwebtoken"
 import mongoose from "mongoose";
 
 //Function to generate and save access and refresh token
@@ -57,10 +58,11 @@ const registerUser=asyncHandler(async (req,res)=>{
     // check for images, check for avatar
 
     
-    //as we wrote a middlewere in the userroute, it gives the req more fields like avatar and cover image file
+    //as we wrote a middlewere in the userroute, 
+    //it gives the req more fields like avatar and cover image file
     // avatar[0] is a path of the file in the local folder
     //we may and may not get files (avatar,coverimage and their path) thats why using "?" .
-    const avatarLocalPath = req. files?.avatar[0]?.path
+    const avatarLocalPath = req.files?.avatar[0]?.path
 
     //const coverImageLocalPath = req. files?.coverImage[0]?.path
     //check if cover image is uploaded by the user or not only then proceed or else will face undifined error
@@ -82,6 +84,7 @@ const registerUser=asyncHandler(async (req,res)=>{
     }
     
     // upload them to cloudinary, avatar
+    //it returns url after uploading on cloud
     const avatar= await uploadOnCloudinary(avatarLocalPath)
     const coverImage = await uploadOnCloudinary(coverImageLocalPath)
     
@@ -103,7 +106,7 @@ const registerUser=asyncHandler(async (req,res)=>{
         username:username.toLowerCase()
 
     })
-    // remove password and refresh token field from response
+    // remove password and refresh token field from response for security reasons
     //if user is created in mongodb, mongodb generates a unique _id for every user object.
     // .select method is for selecting some property,
     //but if we put - infront of any , then it is excluded 
@@ -141,7 +144,7 @@ const loginUser = asyncHandler(async (req,res)=>{
     })
 
     if(!user){
-        throw new ApiError(404,"User doent exist")
+        throw new ApiError(404,"User doesn't exist")
     }
     //password check
     

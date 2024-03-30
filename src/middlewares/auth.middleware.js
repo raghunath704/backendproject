@@ -10,6 +10,7 @@ import { User } from "../models/user.model.js";
 //whenever some fields are not in use _ is added. in this case res.
 export const verifyJWT = asyncHandler(async(req, _, next) => {
     try {
+        //check for access token in cookies
         //the second condition is for the case when cookies is not stored.( Mobile development)
         const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "")
         
