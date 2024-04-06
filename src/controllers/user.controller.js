@@ -452,14 +452,16 @@ const getUserChannelProfile = asyncHandler(async(req,res)=>{
                 },
                 //check if current user is subscribed to current channel
                 //for  implementing subscribe button turning to subscribed
-                isSubscribed:{
-                    $cond:{
-                        //check if current user is present in the channels subscribers
-                        if:{ $in: [ req.user?._id, "$subscribers.subscriber"]},
-                        then: true,
-                        else: false
+                isSubscribed: {
+                    $cond: { // $cond is a conditional operator that evaluates an 'if' condition and returns 'then' or 'else' value based on the condition result.
+                        // Check if the current user's ID is present in the 'subscribers.subscriber' array.
+                        if: { $in: [ req.user?._id, "$subscribers.subscriber"] }, 
+                        // $in returns true if the value on the left is found in the array on the right.
+                        then: true, // If the condition is true (user is subscribed), then return true.
+                        else: false // If the condition is false (user is not subscribed), then return false.
                     }
                 }
+                
 
             }
 
@@ -546,6 +548,7 @@ const getWatchHistory=asyncHandler(async(req,res)=>{
                             //and assigning it on owner (override)
                             owner:{
                                 $first:"$owner"
+                                //it is equivalent  of owner[0] 
                             }
                         }
                     }
