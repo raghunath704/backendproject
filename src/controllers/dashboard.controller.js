@@ -38,23 +38,23 @@ const getChannelStats = asyncHandler(async (req, res) => {
                 as: "total_subscribers"
             }
         },
-        {
-           $group: {
+        {   //The _id field here acts as the key for the group. When you set _id to null, you’re instructing MongoDB to group all documents into a single group. This is useful when you want to perform aggregate operations over the entire collection of documents that match the previous stages of the pipeline.
+            $group: {
                 _id: null,
                 TotalVideos: {$sum : 1},    // sum to get all videos of the user
                 TotalViews: {$sum : "$views"},    
                 TotalSubscribers: {
+                    //as all videos are of same channel so all video documents will have same number of total subscribers,so tkaing from first document.
                     $first: {
                         $size: "$total_subscribers"
                     }
                 },
-                TotalLikes: {
-                    $first: {
+                TotalLikes:{
+                    $first:{
                         $size: "$video_likes"
                     }
                 },
-
-           }
+            }
         },
         {
             $project: {
@@ -102,7 +102,7 @@ const getChannelVideos = asyncHandler(async (req, res) => {
     ])
 
     if (channelVideos.length === 0) {
-        throw new apiError(404, "No videos were found")
+        throw new ApiError(404, "No videos were found")
     }
 
     // returning response
